@@ -1,12 +1,12 @@
 from __future__ import absolute_import, unicode_literals
 
 import itertools
-import json
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 
 import requests
 from six import string_types
 from six.moves.urllib import parse
+from ujson import loads as ujson_loads
 
 from pydruid.db import exceptions
 
@@ -25,7 +25,7 @@ def connect(
     user=None,
     password=None,
     context=None,
-    header=False,
+    header=True,
     ssl_verify_cert=True,
     ssl_client_cert=None,
     proxies=None,
@@ -38,6 +38,9 @@ def connect(
 
     """
     context = context or {}
+
+    if header is not True:
+        raise ValueError("Disabling the column header is not supported.")
 
     return Connection(
         host,
@@ -129,11 +132,14 @@ class Connection(object):
         user=None,
         password=None,
         context=None,
-        header=False,
+        header=True,
         ssl_verify_cert=True,
         ssl_client_cert=None,
         proxies=None,
     ):
+        if header is not True:
+            raise ValueError("Disabling the column header is not supported.")
+
         netloc = "{host}:{port}".format(host=host, port=port)
         self.url = parse.urlunparse((scheme, netloc, path, None, None, None))
         self.context = context or {}
@@ -205,11 +211,14 @@ class Cursor(object):
         user=None,
         password=None,
         context=None,
-        header=False,
+        header=True,
         ssl_verify_cert=True,
         proxies=None,
         ssl_client_cert=None,
     ):
+        if header is not True:
+            raise ValueError("Disabling the column header is not supported.")
+
         self.url = url
         self.context = context or {}
         self.header = header
@@ -252,16 +261,12 @@ class Cursor(object):
         query = apply_parameters(operation, parameters)
         results = self._stream_query(query)
 
-        # `_stream_query` returns a generator that produces the rows; we need to
-        # consume the first row so that `description` is properly set, so let's
-        # consume it and insert it back if it is not the header.
-        try:
-            first_row = next(results)
-            self._results = (
-                results if self.header else itertools.chain([first_row], results)
-            )
-        except StopIteration:
-            self._results = iter([])
+        # `_stream_query` returns a generator that produces the rows.
+        # We need to consume it once so the query is executed and the
+        # `description` is properly set.
+        next(results)
+
+        self._results = results
 
         return self
 
@@ -328,14 +333,20 @@ class Cursor(object):
         """
         Stream rows from a query.
 
-        This method will yield rows as the data is returned in chunks from the
-        server.
+        This method will yield rows as the data is returned from the server.
         """
+        assert self.header is True, "The column header cannot be disabled"
+
         self.description = None
 
         headers = {"Content-Type": "application/json"}
 
-        payload = {"query": query, "context": self.context, "header": self.header}
+        payload = {
+            "query": query,
+            "context": self.context,
+            "header": True,
+            "resultFormat": "arrayLines",
+        }
 
         auth = (
             requests.auth.HTTPBasicAuth(self.user, self.password) if self.user else None
@@ -365,65 +376,25 @@ class Cursor(object):
             msg = "{error} ({errorClass}): {errorMessage}".format(**payload)
             raise exceptions.ProgrammingError(msg)
 
-        # Druid will stream the data in chunks of 8k bytes, splitting the JSON
-        # between them; setting `chunk_size` to `None` makes it use the server
-        # size
-        chunks = r.iter_content(chunk_size=None, decode_unicode=True)
-        Row = None
-        for row in rows_from_chunks(chunks):
-            # update description
-            if self.description is None:
-                self.description = (
-                    list(row.items()) if self.header else get_description_from_row(row)
-                )
+        # Druid will stream the data in chunks of 8k bytes
+        # setting `chunk_size` to `None` makes it use the server size
+        lines = r.iter_lines(chunk_size=None, decode_unicode=True)
 
-            # return row in namedtuple
-            if Row is None:
-                Row = namedtuple("Row", row.keys(), rename=True)
-            yield Row(*row.values())
+        field_names = ujson_loads(next(lines))
+        Row = namedtuple("Row", field_names, rename=True)
+        make_row = Row._make
 
+        self.description = [(name, None) for name in field_names]
 
-def rows_from_chunks(chunks):
-    """
-    A generator that yields rows from JSON chunks.
+        yield None
 
-    Druid will return the data in chunks, but they are not aligned with the
-    JSON objects. This function will parse all complete rows inside each chunk,
-    yielding them as soon as possible.
-    """
-    body = ""
-    for chunk in chunks:
-        if chunk:
-            body = "".join((body, chunk))
+        for row in lines:
+            if not row:
+                break
 
-        # find last complete row
-        boundary = 0
-        brackets = 0
-        in_string = False
-        for i, char in enumerate(body):
-            if char == '"':
-                if not in_string:
-                    in_string = True
-                elif body[i - 1] != "\\":
-                    in_string = False
-
-            if in_string:
-                continue
-
-            if char == "{":
-                brackets += 1
-            elif char == "}":
-                brackets -= 1
-                if brackets == 0 and i > boundary:
-                    boundary = i + 1
-
-        rows = body[:boundary].lstrip("[,")
-        body = body[boundary:]
-
-        for row in json.loads(
-            "[{rows}]".format(rows=rows), object_pairs_hook=OrderedDict
-        ):
-            yield row
+            yield make_row(ujson_loads(row))
+        else:
+            raise ValueError("Truncated response. Trailer line not found.")
 
 
 def apply_parameters(operation, parameters):

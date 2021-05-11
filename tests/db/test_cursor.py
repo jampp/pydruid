@@ -19,14 +19,13 @@ class CursorTestSuite(unittest.TestCase):
     def test_execute(self, requests_post_mock):
         response = Response()
         response.status_code = 200
-        response.raw = BytesIO(
-            b'[{"name": "alice"}, {"name": "bob"}, {"name": "charlie"}]'
-        )
+        response.raw = BytesIO(b'["name"]\n["alice"]\n["bob"]\n["charlie"]\n\n')
         requests_post_mock.return_value = response
         Row = namedtuple("Row", ["name"])
 
         cursor = Cursor("http://example.com/")
         cursor.execute("SELECT * FROM table")
+        self.assertEqual(cursor.description, [("name", None)])
         result = cursor.fetchall()
         expected = [Row(name="alice"), Row(name="bob"), Row(name="charlie")]
         self.assertEqual(result, expected)
@@ -35,14 +34,33 @@ class CursorTestSuite(unittest.TestCase):
     def test_execute_empty_result(self, requests_post_mock):
         response = Response()
         response.status_code = 200
-        response.raw = BytesIO(b"[]")
+        response.raw = BytesIO(b'["name"]\n\n')
         requests_post_mock.return_value = response
 
         cursor = Cursor("http://example.com/")
         cursor.execute("SELECT * FROM table")
+        self.assertEqual(cursor.description, [("name", None)])
         result = cursor.fetchall()
         expected = []
         self.assertEqual(result, expected)
+
+    @patch("requests.post")
+    def test_truncated_response(self, requests_post_mock):
+        response = Response()
+        response.status_code = 200
+        response.raw = BytesIO(b'["name"]\n["alice"]\n')
+        requests_post_mock.return_value = response
+
+        cursor = Cursor("http://example.com/")
+        cursor.execute("SELECT * FROM table")
+        self.assertEqual(cursor.description, [("name", None)])
+
+        with self.assertRaises(ValueError) as cm:
+            cursor.fetchall()
+
+        self.assertEqual(
+            cm.exception.args[0], "Truncated response. Trailer line not found."
+        )
 
     @patch("requests.post")
     def test_context(self, requests_post_mock):
@@ -63,37 +81,30 @@ class CursorTestSuite(unittest.TestCase):
             auth=None,
             stream=True,
             headers={"Content-Type": "application/json"},
-            json={"query": query, "context": context, "header": False},
+            json={
+                "query": query,
+                "context": context,
+                "header": True,
+                "resultFormat": "arrayLines",
+            },
             verify=True,
             cert=None,
             proxies=None,
         )
 
-    @patch("requests.post")
-    def test_header_false(self, requests_post_mock):
-        response = Response()
-        response.status_code = 200
-        response.raw = BytesIO(b'[{"name": "alice"}]')
-        requests_post_mock.return_value = response
-        Row = namedtuple("Row", ["name"])
-
-        url = "http://example.com/"
-        query = "SELECT * FROM table"
-
-        cursor = Cursor(url, header=False)
-        cursor.execute(query)
-        result = cursor.fetchall()
-        self.assertEqual(result, [Row(name="alice")])
+    def test_header_false(self):
+        with self.assertRaises(ValueError) as cm:
+            Cursor("http://example.com/", header=False)
 
         self.assertEqual(
-            cursor.description, [("name", 1, None, None, None, None, True)]
+            cm.exception.args[0], "Disabling the column header is not supported."
         )
 
     @patch("requests.post")
     def test_header_true(self, requests_post_mock):
         response = Response()
         response.status_code = 200
-        response.raw = BytesIO(b'[{"name": null}, {"name": "alice"}]')
+        response.raw = BytesIO(b'["name"]\n["alice"]\n\n')
         requests_post_mock.return_value = response
         Row = namedtuple("Row", ["name"])
 
@@ -110,7 +121,7 @@ class CursorTestSuite(unittest.TestCase):
     def test_names_with_underscores(self, requests_post_mock):
         response = Response()
         response.status_code = 200
-        response.raw = BytesIO(b'[{"_name": null}, {"_name": "alice"}]')
+        response.raw = BytesIO(b'["_name"]\n["alice"]\n\n')
         requests_post_mock.return_value = response
         Row = namedtuple("Row", ["_name"], rename=True)
 
