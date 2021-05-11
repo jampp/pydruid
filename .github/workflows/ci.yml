@@ -22,7 +22,7 @@ jobs:
         - name: Install System dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install -y libgnutls28-dev
+            sudo apt-get install -y libgnutls28-dev libcurl4-openssl-dev libssl-dev
         - name: Install tox
           run: |
             python -m pip install --upgrade pip
