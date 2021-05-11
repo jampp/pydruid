@@ -1,9 +1,12 @@
+from __future__ import absolute_import, unicode_literals
+
 import itertools
 import json
 from collections import namedtuple, OrderedDict
-from urllib import parse
 
 import requests
+from six import string_types
+from six.moves.urllib import parse
 
 from pydruid.db import exceptions
 
@@ -104,7 +107,7 @@ def get_type(value):
     Note that bool is a subclass of int so order of statements matter.
     """
 
-    if isinstance(value, str) or value is None:
+    if isinstance(value, string_types) or value is None:
         return Type.STRING
     elif isinstance(value, bool):
         return Type.BOOLEAN
@@ -440,7 +443,7 @@ def escape(value):
 
     if value == "*":
         return value
-    elif isinstance(value, str):
+    elif isinstance(value, string_types):
         return "'{}'".format(value.replace("'", "''"))
     elif isinstance(value, bool):
         return "TRUE" if value else "FALSE"

@@ -1,5 +1,11 @@
 ## Change Log
 
+### 0.6.1j (Unreleased)
+
+NOTE: This release is restoring support for Python 2.*
+
+- TODO
+
 ### 0.6.0 (2020/06/07 04:02 +00:00)
 
 NOTE: This release is deprecating support for Python 2.*

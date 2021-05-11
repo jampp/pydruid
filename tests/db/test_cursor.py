@@ -2,12 +2,16 @@
 
 import unittest
 from collections import namedtuple
-from io import BytesIO
-from unittest.mock import patch
 
 from requests.models import Response
+from six import BytesIO
 
 from pydruid.db.api import apply_parameters, Cursor
+
+try:
+    from mock import patch
+except ImportError:
+    from unittest.mock import patch
 
 
 class CursorTestSuite(unittest.TestCase):
