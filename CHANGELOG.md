@@ -4,7 +4,7 @@
 
 NOTE: This release is restoring support for Python 2.*
 
-- TODO
+- [#1](https://github.com/jampp/pydruid/pull/1) Re add support for Python2.7
 
 ### 0.6.0 (2020/06/07 04:02 +00:00)
 
