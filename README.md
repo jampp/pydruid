@@ -238,7 +238,7 @@ SQLAlchemy query statements).
 
 This also limited the [resultFormat](https://druid.apache.org/docs/latest/querying/sql.html#responses)
 that could be used in the responses to only ``object``/``objectLines`` (that always include the column
-names). However, as a result, the column names were included no only once in the response but were
+names). However, as a result, the column names were included not only once in the response but were
 repeated for each of the rows, increasing network and CPU usage for the fetching and parsing.
 
 For these reasons, using Druid SQL < 0.13.0 is no longer supported.
