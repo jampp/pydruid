@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import itertools
+import warnings
 from collections import namedtuple
 
 import requests
@@ -25,7 +26,7 @@ def connect(
     user=None,
     password=None,
     context=None,
-    header=True,
+    header=None,
     ssl_verify_cert=True,
     ssl_client_cert=None,
     proxies=None,
@@ -39,8 +40,13 @@ def connect(
     """
     context = context or {}
 
-    if header is not True:
-        raise ValueError("Disabling the column header is not supported.")
+    if header is not None:
+        warnings.warn(
+            "The `header` parameter is deprecated and will be removed in a future release",  # noqa: E501
+            DeprecationWarning,
+        )
+        if header is not True:
+            raise ValueError("Disabling the column header is no longer supported.")
 
     return Connection(
         host,
@@ -132,13 +138,18 @@ class Connection(object):
         user=None,
         password=None,
         context=None,
-        header=True,
+        header=None,
         ssl_verify_cert=True,
         ssl_client_cert=None,
         proxies=None,
     ):
-        if header is not True:
-            raise ValueError("Disabling the column header is not supported.")
+        if header is not None:
+            warnings.warn(
+                "The `header` parameter is deprecated and will be removed in a future release",  # noqa: E501
+                DeprecationWarning,
+            )
+            if header is not True:
+                raise ValueError("Disabling the column header is no longer supported.")
 
         netloc = "{host}:{port}".format(host=host, port=port)
         self.url = parse.urlunparse((scheme, netloc, path, None, None, None))
@@ -211,17 +222,21 @@ class Cursor(object):
         user=None,
         password=None,
         context=None,
-        header=True,
+        header=None,
         ssl_verify_cert=True,
         proxies=None,
         ssl_client_cert=None,
     ):
-        if header is not True:
-            raise ValueError("Disabling the column header is not supported.")
+        if header is not None:
+            warnings.warn(
+                "The `header` parameter is deprecated and will be removed in a future release",  # noqa: E501
+                DeprecationWarning,
+            )
+            if header is not True:
+                raise ValueError("Disabling the column header is no longer supported.")
 
         self.url = url
         self.context = context or {}
-        self.header = header
         self.user = user
         self.password = password
         self.ssl_verify_cert = ssl_verify_cert
@@ -335,8 +350,6 @@ class Cursor(object):
 
         This method will yield rows as the data is returned from the server.
         """
-        assert self.header is True, "The column header cannot be disabled"
-
         self.description = None
 
         headers = {"Content-Type": "application/json"}
