@@ -243,6 +243,17 @@ repeated for each of the rows, increasing network and CPU usage for the fetching
 
 For these reasons, using Druid SQL < 0.13.0 is no longer supported.
 
+Note, though, that the current default still is ``false`` to ensure compatibility with the official
+pydruid package. If the header is not enabled when using this fork, a warning will be printed,
+the value will be ignored, and we will force ``header=True``.
+
+Explicitly enabling the header can be configured via the SQLAlchemy URI by using the query
+parameter, i.e.,
+
+```python
+engine = create_engine('druid://localhost:8082/druid/v2/sql?header=true')
+```
+
 
 # Command line
 

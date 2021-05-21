@@ -115,11 +115,8 @@ class DruidDialect(default.DefaultDialect):
             "path": url.database,
             "scheme": self.scheme,
             "context": self.context,
+            "header": url.query.get("header") == "true",
         }
-
-        header = url.query.get("header")
-        if header is not None:
-            kwargs["header"] = header != "false"
 
         return ([], kwargs)
 

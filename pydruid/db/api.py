@@ -26,7 +26,7 @@ def connect(
     user=None,
     password=None,
     context=None,
-    header=None,
+    header=False,
     ssl_verify_cert=True,
     ssl_client_cert=None,
     proxies=None,
@@ -39,14 +39,6 @@ def connect(
 
     """
     context = context or {}
-
-    if header is not None:
-        warnings.warn(
-            "The `header` parameter is deprecated and will be removed in a future release",  # noqa: E501
-            DeprecationWarning,
-        )
-        if header is not True:
-            raise ValueError("Disabling the column header is no longer supported.")
 
     return Connection(
         host,
@@ -138,19 +130,11 @@ class Connection(object):
         user=None,
         password=None,
         context=None,
-        header=None,
+        header=False,
         ssl_verify_cert=True,
         ssl_client_cert=None,
         proxies=None,
     ):
-        if header is not None:
-            warnings.warn(
-                "The `header` parameter is deprecated and will be removed in a future release",  # noqa: E501
-                DeprecationWarning,
-            )
-            if header is not True:
-                raise ValueError("Disabling the column header is no longer supported.")
-
         netloc = "{host}:{port}".format(host=host, port=port)
         self.url = parse.urlunparse((scheme, netloc, path, None, None, None))
         self.context = context or {}
@@ -222,18 +206,16 @@ class Cursor(object):
         user=None,
         password=None,
         context=None,
-        header=None,
+        header=False,
         ssl_verify_cert=True,
         proxies=None,
         ssl_client_cert=None,
     ):
-        if header is not None:
+        if header is not True:
             warnings.warn(
-                "The `header` parameter is deprecated and will be removed in a future release",  # noqa: E501
-                DeprecationWarning,
+                "Disabling the `header` parameter is not supported in this version of the lib."  # noqa: E501
+                " The value will be ignored and we will force `header=True`.",
             )
-            if header is not True:
-                raise ValueError("Disabling the column header is no longer supported.")
 
         self.url = url
         self.context = context or {}

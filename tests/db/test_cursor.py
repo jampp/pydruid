@@ -25,7 +25,7 @@ class CursorTestSuite(unittest.TestCase):
         requests_post_mock.return_value = response
         Row = namedtuple("Row", ["name"])
 
-        cursor = Cursor("http://example.com/")
+        cursor = Cursor("http://example.com/", header=True)
         cursor.execute("SELECT * FROM table")
         self.assertEqual(cursor.description, [("name", None)])
         result = cursor.fetchall()
@@ -39,7 +39,7 @@ class CursorTestSuite(unittest.TestCase):
         response.raw = BytesIO(b'["name"]\n\n')
         requests_post_mock.return_value = response
 
-        cursor = Cursor("http://example.com/")
+        cursor = Cursor("http://example.com/", header=True)
         cursor.execute("SELECT * FROM table")
         self.assertEqual(cursor.description, [("name", None)])
         result = cursor.fetchall()
@@ -53,7 +53,7 @@ class CursorTestSuite(unittest.TestCase):
         response.raw = BytesIO(b'["name"]\n["alice"]\n')
         requests_post_mock.return_value = response
 
-        cursor = Cursor("http://example.com/")
+        cursor = Cursor("http://example.com/", header=True)
         cursor.execute("SELECT * FROM table")
         self.assertEqual(cursor.description, [("name", None)])
 
@@ -75,7 +75,7 @@ class CursorTestSuite(unittest.TestCase):
         query = "SELECT * FROM table"
         context = {"source": "unittest"}
 
-        cursor = Cursor(url, user=None, password=None, context=context)
+        cursor = Cursor(url, user=None, password=None, context=context, header=True)
         cursor.execute(query)
 
         requests_post_mock.assert_called_with(
@@ -94,21 +94,29 @@ class CursorTestSuite(unittest.TestCase):
             proxies=None,
         )
 
-    def test_header_false(self):
+    @patch("requests.post")
+    def test_header_false(self, requests_post_mock):
+        response = Response()
+        response.status_code = 200
+        response.raw = BytesIO(b'["name"]\n["alice"]\n\n')
+        requests_post_mock.return_value = response
+        Row = namedtuple("Row", ["name"])
+
         with warnings.catch_warnings(record=True) as warning_list:
             warnings.simplefilter("always")
 
-            with self.assertRaises(ValueError) as cm:
-                Cursor("http://example.com/", header=False)
+            cursor = Cursor("http://example.com/", header=False)
 
-        self.assertEqual(
-            cm.exception.args[0], "Disabling the column header is no longer supported."
-        )
-        self.assertEqual(warning_list[-1].category, DeprecationWarning)
         self.assertIn(
-            "The `header` parameter is deprecated and will be removed in a future release",  # noqa: E501
+            "Disabling the `header` parameter is not supported in this version of the lib."  # noqa: E501
+            " The value will be ignored and we will force `header=True`.",
             str(warning_list[-1].message),
         )
+
+        cursor.execute("SELECT * FROM table")
+        result = cursor.fetchall()
+        self.assertEqual(result, [Row(name="alice")])
+        self.assertEqual(cursor.description, [("name", None)])
 
     @patch("requests.post")
     def test_header_true(self, requests_post_mock):
@@ -121,17 +129,7 @@ class CursorTestSuite(unittest.TestCase):
         url = "http://example.com/"
         query = "SELECT * FROM table"
 
-        with warnings.catch_warnings(record=True) as warning_list:
-            warnings.simplefilter("always")
-
-            cursor = Cursor(url, header=True)
-
-        self.assertEqual(warning_list[-1].category, DeprecationWarning)
-        self.assertIn(
-            "The `header` parameter is deprecated and will be removed in a future release",  # noqa: E501
-            str(warning_list[-1].message),
-        )
-
+        cursor = Cursor(url, header=True)
         cursor.execute(query)
         result = cursor.fetchall()
         self.assertEqual(result, [Row(name="alice")])
@@ -148,7 +146,7 @@ class CursorTestSuite(unittest.TestCase):
         url = "http://example.com/"
         query = "SELECT * FROM table"
 
-        cursor = Cursor(url)
+        cursor = Cursor(url, header=True)
         cursor.execute(query)
         result = cursor.fetchall()
         self.assertEqual(result, [Row(_0="alice")])
