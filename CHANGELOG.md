@@ -2,7 +2,7 @@
 
 ### 0.6.1j (Unreleased)
 
-NOTE: This release is restoring support for Python 2.*
+NOTE: This release is restoring support for Python 2.7
 
 - [#1](https://github.com/jampp/pydruid/pull/1) Re add support for Python2.7
 
