@@ -15,8 +15,6 @@
 # limitations under the License.
 #
 
-from unittest.mock import Mock
-
 import pytest
 import tornado
 import tornado.ioloop
@@ -123,7 +121,8 @@ class TestAsyncPyDruid(AsyncHTTPTestCase):
         )
 
         # when / then
-        # assert that last_query.export_tsv method was called (it should throw an exception, given empty path)
+        # assert that last_query.export_tsv method was called
+        # (it should throw an exception, given empty path)
         with pytest.raises(TypeError):
             client.export_tsv(None)
 

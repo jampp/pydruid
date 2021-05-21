@@ -16,7 +16,6 @@
 #
 
 import csv
-import os
 
 import pandas
 import pytest
@@ -148,7 +147,9 @@ class TestQueryBuilder:
         pytest.raises(
             ValueError,
             builder.validate_query,
-            *[None, ["validkey"], {"invalidkey": "value"}]
+            None,
+            ["validkey"],
+            {"invalidkey": "value"},
         )
 
     def test_union_datasource(self):

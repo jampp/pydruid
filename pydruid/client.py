@@ -15,8 +15,9 @@
 #
 import json
 import re
-import urllib
 from base64 import b64encode
+
+from six.moves import urllib
 
 from pydruid.query import QueryBuilder
 

@@ -1,15 +1,19 @@
 # -*- coding: UTF-8 -*-
 import textwrap
-import urllib
-from io import StringIO
-from unittest.mock import Mock, patch
 
 import pytest
+from six import StringIO
+from six.moves import urllib
 
 from pydruid.client import PyDruid
 from pydruid.query import Query
 from pydruid.utils.aggregators import doublesum
 from pydruid.utils.filters import Dimension
+
+try:
+    from mock import Mock, patch
+except ImportError:
+    from unittest.mock import Mock, patch
 
 
 def create_client():
@@ -66,7 +70,7 @@ class TestPyDruid:
             <hr /><a href="http://eclipse.org/jetty">Powered by Jetty:// 9.3.19.v20170502</a><hr/>
             </body>
             </html>
-        """
+        """  # noqa: E501
         ).strip()
         mock_urlopen.side_effect = _http_error(500, "Internal Server Error", message)
         client = create_client()
@@ -115,7 +119,7 @@ class TestPyDruid:
                 "queryType": "topN",
                 "threshold": 1
             }
-        """
+        """  # noqa: E501
             ).strip()
         )
 
@@ -185,7 +189,8 @@ class TestPyDruid:
         )
 
         # when / then
-        # assert that last_query.export_tsv method was called (it should throw an exception, given empty path)
+        # assert that last_query.export_tsv method was called
+        # (it should throw an exception, given empty path)
         with pytest.raises(TypeError):
             client.export_tsv(None)
 
