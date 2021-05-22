@@ -26,7 +26,7 @@ def connect(
     user=None,
     password=None,
     context=None,
-    header=False,
+    header=None,
     ssl_verify_cert=True,
     ssl_client_cert=None,
     proxies=None,
@@ -130,7 +130,7 @@ class Connection(object):
         user=None,
         password=None,
         context=None,
-        header=False,
+        header=None,
         ssl_verify_cert=True,
         ssl_client_cert=None,
         proxies=None,
@@ -206,12 +206,12 @@ class Cursor(object):
         user=None,
         password=None,
         context=None,
-        header=False,
+        header=None,
         ssl_verify_cert=True,
         proxies=None,
         ssl_client_cert=None,
     ):
-        if header is not True:
+        if header is False:
             warnings.warn(
                 "Disabling the `header` parameter is not supported in this version of the lib."  # noqa: E501
                 " The value will be ignored and we will force `header=True`.",

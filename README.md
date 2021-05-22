@@ -241,18 +241,8 @@ that could be used in the responses to only ``object``/``objectLines`` (that alw
 names). However, as a result, the column names were included not only once in the response but were
 repeated for each of the rows, increasing network and CPU usage for the fetching and parsing.
 
-For these reasons, using Druid SQL < 0.13.0 is no longer supported.
-
-Note, though, that the current default still is ``false`` to ensure compatibility with the official
-pydruid package. If the header is not enabled when using this fork, a warning will be printed,
-the value will be ignored, and we will force ``header=True``.
-
-Explicitly enabling the header can be configured via the SQLAlchemy URI by using the query
-parameter, i.e.,
-
-```python
-engine = create_engine('druid://localhost:8082/druid/v2/sql?header=true')
-```
+For these reasons, using Druid SQL < 0.13.0 is no longer supported, and the header is always
+enabled. Trying to disable the header will print a warning, and the provided value will be ignored.
 
 
 # Command line

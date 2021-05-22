@@ -25,7 +25,7 @@ class CursorTestSuite(unittest.TestCase):
         requests_post_mock.return_value = response
         Row = namedtuple("Row", ["name"])
 
-        cursor = Cursor("http://example.com/", header=True)
+        cursor = Cursor("http://example.com/")
         cursor.execute("SELECT * FROM table")
         self.assertEqual(cursor.description, [("name", None)])
         result = cursor.fetchall()
@@ -39,7 +39,7 @@ class CursorTestSuite(unittest.TestCase):
         response.raw = BytesIO(b'["name"]\n\n')
         requests_post_mock.return_value = response
 
-        cursor = Cursor("http://example.com/", header=True)
+        cursor = Cursor("http://example.com/")
         cursor.execute("SELECT * FROM table")
         self.assertEqual(cursor.description, [("name", None)])
         result = cursor.fetchall()
@@ -53,7 +53,7 @@ class CursorTestSuite(unittest.TestCase):
         response.raw = BytesIO(b'["name"]\n["alice"]\n')
         requests_post_mock.return_value = response
 
-        cursor = Cursor("http://example.com/", header=True)
+        cursor = Cursor("http://example.com/")
         cursor.execute("SELECT * FROM table")
         self.assertEqual(cursor.description, [("name", None)])
 
@@ -75,7 +75,7 @@ class CursorTestSuite(unittest.TestCase):
         query = "SELECT * FROM table"
         context = {"source": "unittest"}
 
-        cursor = Cursor(url, user=None, password=None, context=context, header=True)
+        cursor = Cursor(url, user=None, password=None, context=context)
         cursor.execute(query)
 
         requests_post_mock.assert_called_with(
@@ -146,7 +146,7 @@ class CursorTestSuite(unittest.TestCase):
         url = "http://example.com/"
         query = "SELECT * FROM table"
 
-        cursor = Cursor(url, header=True)
+        cursor = Cursor(url)
         cursor.execute(query)
         result = cursor.fetchall()
         self.assertEqual(result, [Row(_0="alice")])
