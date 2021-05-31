@@ -211,7 +211,7 @@ class Cursor(object):
         proxies=None,
         ssl_client_cert=None,
     ):
-        if header is False:
+        if header is not None and not header:
             warnings.warn(
                 "Disabling the `header` parameter is not supported in this version of the lib."  # noqa: E501
                 " The value will be ignored and we will force `header=True`.",
