@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  - push
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: [2.7, 3.7]
+
+        steps:
+        - uses: actions/checkout@v2
+        - name: Set up Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v2
+          with:
+            python-version: ${{ matrix.python-version }}
+        - name: Display Python version
+          run: python -c "import sys; print(sys.version)"
+        - name: Install System dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y libgnutls28-dev libcurl4-openssl-dev libssl-dev
+        - name: Install tox
+          run: |
+            python -m pip install --upgrade pip
+            pip install $(cat requirements-dev.txt | egrep '(tox|tox-gh-actions)')
+        - name: Run tests
+          run: tox
