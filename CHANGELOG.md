@@ -1,9 +1,11 @@
 ## Change Log
 
-### 0.6.1j (Unreleased)
+### 0.7.0j (Unreleased)
 
 NOTE: This release is restoring support for Python 2.7
+NOTE: This release is removing support for Druid < 0.13.0
 
+- [#3](https://github.com/jampp/pydruid/pull/3) Use ``arrayLines`` as ``resultFormat``. Force ``header=True``.
 - [#2](https://github.com/jampp/pydruid/pull/2) Setup GitHub actions for CI
 - [#1](https://github.com/jampp/pydruid/pull/1) Re add support for Python2.7
 

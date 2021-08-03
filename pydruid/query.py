@@ -26,9 +26,9 @@ from pydruid.utils.postaggregator import Postaggregator
 from pydruid.utils.query_utils import UnicodeWriter
 
 try:
-    from collections import MutableSequence
-except ImportError:
     from collections.abc import MutableSequence
+except ImportError:
+    from collections import MutableSequence
 
 
 class Query(MutableSequence):

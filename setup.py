@@ -2,7 +2,7 @@ import io
 
 from setuptools import find_packages, setup
 
-install_requires = ["six >= 1.9.0", "requests"]
+install_requires = ["six >= 1.9.0", "requests", "ujson"]
 
 extras_require = {
     "pandas": ["pandas"],
@@ -16,7 +16,7 @@ with io.open("README.md", encoding="utf-8") as f:
 
 setup(
     name="pydruid",
-    version="0.6.1j",
+    version="0.7.0j",
     author="Druid Developers",
     author_email="druid-development@googlegroups.com",
     packages=find_packages(),

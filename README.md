@@ -231,22 +231,18 @@ print(select([func.count('*')], from_obj=places).scalar())
 
 ## Column headers
 
-In version 0.13.0 Druid SQL added support for including the column names in the
-response which can be requested via the "header" field in the request. This
-helps to ensure that the cursor description is defined (which is a requirement
-for SQLAlchemy query statements) regardless on whether the result set contains
-any rows. Historically this was problematic for result sets which contained no
-rows at one could not infer the expected column names.
+Previous to version 0.13.0, Druid SQL did not support including the column names in the response.
+This was problematic for result sets which contained no rows, as one could not infer the expected
+column names and ensure that the cursor description was always defined (which is a requirement for
+SQLAlchemy query statements).
 
-Enabling the header can be configured via the SQLAlchemy URI by using the query
-parameter, i.e.,
+This also limited the [resultFormat](https://druid.apache.org/docs/latest/querying/sql.html#responses)
+that could be used in the responses to only ``object``/``objectLines`` (that always include the column
+names). However, as a result, the column names were included not only once in the response but were
+repeated for each of the rows, increasing network and CPU usage for the fetching and parsing.
 
-```python
-engine = create_engine('druid://localhost:8082/druid/v2/sql?header=true')
-```
-
-Note the current default is `false` to ensure backwards compatibility but should
-be set to `true` for Druid versions >= 0.13.0.
+For these reasons, using Druid SQL < 0.13.0 is no longer supported, and the header is always
+enabled. Trying to disable the header will print a warning, and the provided value will be ignored.
 
 
 # Command line
