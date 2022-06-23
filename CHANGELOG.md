@@ -1,7 +1,7 @@
 ## Change Log
 
 ### 0.8.0j (Unreleased)
-- [#1](https://github.com/jampp/pydruid/pull/1) Harden streamed query reliability
+- [#1](https://github.com/jampp/pydruid/pull/5) Harden streamed query reliability
 
 ### 0.7.0j (2021/08/13 12:12 +00:00)
 
