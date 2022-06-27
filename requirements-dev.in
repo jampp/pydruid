@@ -4,6 +4,3 @@ pycurl
 pytest
 tox
 tox-gh-actions
-typing; python_version < "3.0"
-futures; python_version < "3.0"
-mock; python_version < "3.0"

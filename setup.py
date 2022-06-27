@@ -2,7 +2,7 @@ import io
 
 from setuptools import find_packages, setup
 
-install_requires = ["six >= 1.9.0", "requests", "ujson"]
+install_requires = ["requests", "ujson"]
 
 extras_require = {
     "pandas": ["pandas"],
@@ -32,7 +32,7 @@ setup(
     long_description_content_type="text/markdown",
     install_requires=install_requires,
     extras_require=extras_require,
-    tests_require=["pytest", "six", 'mock; python_version < "3.0"'],
+    tests_require=["pytest"],
     entry_points={
         "console_scripts": ["pydruid = pydruid.console:main"],
         "sqlalchemy.dialects": [
@@ -45,7 +45,6 @@ setup(
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+from urllib import parse
 
 from prompt_toolkit import prompt
 from prompt_toolkit.completion.word_completer import WordCompleter
@@ -9,7 +10,6 @@ from pygments.lexers import SqlLexer
 from pygments.style import Style
 from pygments.styles.default import DefaultStyle
 from pygments.token import Token
-from six.moves.urllib import parse
 from tabulate import tabulate
 
 from pydruid.db.api import connect
