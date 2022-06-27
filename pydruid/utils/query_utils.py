@@ -16,8 +16,6 @@
 import codecs
 import csv
 
-import six
-
 # A special CSV writer which will write rows to TSV file "f", which is encoded in utf-8.
 # this is necessary because the values in druid are not all ASCII.
 
@@ -31,11 +29,7 @@ class UnicodeWriter(object):
         self.encoder = codecs.getincrementalencoder(encoding)()
 
     def __encode(self, data):
-        data = str(data) if isinstance(data, six.integer_types) else data
-        if not six.PY3:
-            data = data.encode("utf-8") if isinstance(data, unicode) else data  # noqa
-            data = data.decode("utf-8")
-            return self.encoder.encode(data)
+        data = str(data) if isinstance(data, int) else data
         return data
 
     def writerow(self, row):
