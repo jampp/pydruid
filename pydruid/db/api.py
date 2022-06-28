@@ -370,7 +370,7 @@ class Cursor(object):
 
         # Druid will stream the data in chunks of 8k bytes
         # setting `chunk_size` to `None` makes it use the server size
-        lines = r.iter_lines(chunk_size=None, decode_unicode=True)
+        lines = r.iter_lines(chunk_size=None, decode_unicode=False)
 
         field_names = ujson_loads(next(lines))
         Row = namedtuple("Row", field_names, rename=True)

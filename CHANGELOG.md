@@ -1,7 +1,9 @@
 ## Change Log
 
 ### 0.8.0j (Unreleased)
+- [#5](https://github.com/jampp/pydruid/pull/5) Harden streamed query reliability
 - [#6](https://github.com/jampp/pydruid/pull/6) Remove support for Python2.7
+
 
 ### 0.7.0j (2021/08/13 12:12 +00:00)
 
