@@ -1,6 +1,9 @@
 ## Change Log
 
-### 0.7.0j (Unreleased)
+### 0.8.0j (Unreleased)
+- [#6](https://github.com/jampp/pydruid/pull/6) Remove support for Python2.7
+
+### 0.7.0j (2021/08/13 12:12 +00:00)
 
 NOTE: This release is restoring support for Python 2.7
 NOTE: This release is removing support for Druid < 0.13.0

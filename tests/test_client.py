@@ -1,19 +1,15 @@
 # -*- coding: UTF-8 -*-
 import textwrap
+import urllib
+from io import StringIO
+from unittest.mock import Mock, patch
 
 import pytest
-from six import StringIO
-from six.moves import urllib
 
 from pydruid.client import PyDruid
 from pydruid.query import Query
 from pydruid.utils.aggregators import doublesum
 from pydruid.utils.filters import Dimension
-
-try:
-    from mock import Mock, patch
-except ImportError:
-    from unittest.mock import Mock, patch
 
 
 def create_client():
