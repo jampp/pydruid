@@ -1,6 +1,9 @@
 ## Change Log
 
-### 0.8.0j (Unreleased)
+### 0.9.0j (Unreleased)
+- [#7](https://github.com/jampp/pydruid/pull/7) Add support for async SQL API
+
+### 0.8.0j (2022-06-28 15:34 +00:00)
 - [#5](https://github.com/jampp/pydruid/pull/5) Harden streamed query reliability
 - [#6](https://github.com/jampp/pydruid/pull/6) Remove support for Python2.7
 

@@ -76,7 +76,6 @@ class CursorTestSuite(unittest.TestCase):
 
         requests_post_mock.assert_called_with(
             "http://example.com/",
-            auth=None,
             stream=True,
             headers={"Content-Type": "application/json"},
             json={
@@ -88,6 +87,7 @@ class CursorTestSuite(unittest.TestCase):
             verify=True,
             cert=None,
             proxies=None,
+            timeout=None,
         )
 
     @patch("requests.post")
