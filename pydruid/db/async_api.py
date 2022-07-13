@@ -2,19 +2,18 @@ from collections import namedtuple
 
 from ujson import loads as ujson_loads
 
+from pydruid.db.api import (
+    apply_parameters,
+    BaseConnection,
+    BaseCursor,
+    check_closed,
+    check_result,
+)
+
 try:
     import httpx
 except ImportError:
     print("Warning: unable to import HTTPX. The asynchronous api will not work.")
-
-
-from pydruid.db.api import (
-    BaseConnection,
-    BaseCursor,
-    apply_parameters,
-    check_closed,
-    check_result,
-)
 
 
 def async_connect(
