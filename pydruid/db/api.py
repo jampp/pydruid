@@ -373,6 +373,9 @@ class BaseCursor(object):
         msg = "{error} ({errorClass}): {errorMessage}".format(**payload)
         raise exceptions.ProgrammingError(msg)
 
+    def _set_description(self, field_names):
+        self.description = [(name, None) for name in field_names]
+
 
 class Cursor(BaseCursor):
     """Connection cursor."""
@@ -460,9 +463,7 @@ class Cursor(BaseCursor):
         Row = namedtuple("Row", field_names, rename=True)
         make_row = Row._make
 
-        self.description = [(name, None) for name in field_names]
-
-        yield None
+        yield self._set_description(field_names)
 
         for row in lines:
             if not row:
