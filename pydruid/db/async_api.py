@@ -164,11 +164,7 @@ class AsyncCursor(BaseCursor):
             timeout=self.timeout,
         )
 
-        async with http_client.stream(
-            "POST",
-            self.url,
-            json=payload,
-        ) as response:
+        async with http_client.stream("POST", self.url, json=payload) as response:
             if response.encoding is None:
                 response.encoding = "utf-8"
             # raise any error messages
