@@ -360,6 +360,19 @@ class BaseCursor(object):
 
         return headers, payload
 
+    @staticmethod
+    def _handle_http_error(response):
+        try:
+            payload = response.json()
+        except Exception:
+            payload = {
+                "error": "Unknown error",
+                "errorClass": "Unknown",
+                "errorMessage": response.text,
+            }
+        msg = "{error} ({errorClass}): {errorMessage}".format(**payload)
+        raise exceptions.ProgrammingError(msg)
+
 
 class Cursor(BaseCursor):
     """Connection cursor."""
@@ -437,16 +450,7 @@ class Cursor(BaseCursor):
             r.encoding = "utf-8"
         # raise any error messages
         if r.status_code != 200:
-            try:
-                payload = r.json()
-            except Exception:
-                payload = {
-                    "error": "Unknown error",
-                    "errorClass": "Unknown",
-                    "errorMessage": r.text,
-                }
-            msg = "{error} ({errorClass}): {errorMessage}".format(**payload)
-            raise exceptions.ProgrammingError(msg)
+            self._handle_http_error(r)
 
         # Druid will stream the data in chunks of 8k bytes
         # setting `chunk_size` to `None` makes it use the server size

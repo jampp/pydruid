@@ -8,7 +8,6 @@ except ImportError:
     print("Warning: unable to import HTTPX. The asynchronous api will not work.")
 
 
-from pydruid.db import exceptions
 from pydruid.db.api import (
     BaseConnection,
     BaseCursor,
@@ -175,17 +174,7 @@ class AsyncCursor(BaseCursor):
             # raise any error messages
             if response.status_code != 200:
                 await response.aread()
-
-                try:
-                    payload = response.json()
-                except Exception:
-                    payload = {
-                        "error": "Unknown error",
-                        "errorClass": "Unknown",
-                        "errorMessage": response.text,
-                    }
-                msg = "{error} ({errorClass}): {errorMessage}".format(**payload)
-                raise exceptions.ProgrammingError(msg)
+                self._handle_http_error(response)
 
             # Druid will stream the data in chunks of 8k bytes
             # setting `chunk_size` to `None` makes it use the server size
