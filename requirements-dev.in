@@ -1,4 +1,4 @@
--r requirements.txt
+-r requirements.in
 pip-tools
 pre-commit>2.9.2
 pycurl
