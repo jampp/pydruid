@@ -110,7 +110,7 @@ class AsyncCursor(BaseCursor):
         # `_stream_query` returns a generator that produces the rows.
         # We need to consume it once so the query is executed and the
         # `description` is properly set.
-        await anext(results)
+        await results.__anext__()
 
         self._results = results
 
@@ -139,12 +139,12 @@ class AsyncCursor(BaseCursor):
     @check_result
     @check_closed
     async def fetchall(self):
-        return list(row async for row in self._results)
+        return [row async for row in self._results]
 
     @check_result
     @check_closed
     def __anext__(self):
-        return anext(self._results)
+        return self._results.__anext__()
 
     anext = __anext__
 
@@ -191,7 +191,7 @@ class AsyncCursor(BaseCursor):
             # setting `chunk_size` to `None` makes it use the server size
             lines = self._aiter_lines(response, chunk_size=None)
 
-            field_names = ujson_loads(await anext(lines))
+            field_names = ujson_loads(await lines.__anext__())
             Row = namedtuple("Row", field_names, rename=True)
             make_row = Row._make
 
