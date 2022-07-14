@@ -9,6 +9,7 @@ import tornado.web
 from tornado.testing import AsyncHTTPTestCase, gen_test
 
 from pydruid.db.async_api import AsyncCursor
+from pydruid.db.exceptions import ProgrammingError
 
 
 class DruidMockServer(tornado.web.Application):
@@ -106,6 +107,17 @@ class AsyncCursorTestSuite(AsyncHTTPTestCase):
                 "resultFormat": "arrayLines",
             },
         )
+
+    @gen_test
+    async def test_error(self):
+        self.set_mock_response(500, "Some error")
+
+        cursor = AsyncCursor(self.get_sql_endpoint_url())
+
+        with self.assertRaises(ProgrammingError) as cm:
+            await cursor.execute("SELECT * FROM table")
+
+        self.assertEqual(cm.exception.args[0], "Unknown error (Unknown): Some error")
 
 
 if __name__ == "__main__":
