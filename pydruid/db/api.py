@@ -1,5 +1,8 @@
+import asyncio
+import functools
 import itertools
 import warnings
+from base64 import b64encode
 from collections import namedtuple
 from urllib import parse
 
@@ -27,6 +30,7 @@ def connect(
     ssl_verify_cert=True,
     ssl_client_cert=None,
     proxies=None,
+    timeout=None,
 ):  # noqa: E125
     """
     Constructor for creating a connection to the database.
@@ -49,31 +53,54 @@ def connect(
         ssl_verify_cert,
         ssl_client_cert,
         proxies,
+        timeout,
     )
 
 
 def check_closed(f):
     """Decorator that checks if connection/cursor is closed."""
 
-    def g(self, *args, **kwargs):
-        if self.closed:
-            raise exceptions.Error(
-                "{klass} already closed".format(klass=self.__class__.__name__)
-            )
-        return f(self, *args, **kwargs)
+    if asyncio.iscoroutinefunction(f):
 
-    return g
+        async def g(self, *args, **kwargs):
+            if self.closed:
+                raise exceptions.Error(
+                    "{klass} already closed".format(klass=self.__class__.__name__)
+                )
+
+            return await f(self, *args, **kwargs)
+
+    else:
+
+        def g(self, *args, **kwargs):
+            if self.closed:
+                raise exceptions.Error(
+                    "{klass} already closed".format(klass=self.__class__.__name__)
+                )
+
+            return f(self, *args, **kwargs)
+
+    return functools.wraps(f)(g)
 
 
 def check_result(f):
     """Decorator that checks if the cursor has results from `execute`."""
 
-    def g(self, *args, **kwargs):
-        if self._results is None:
-            raise exceptions.Error("Called before `execute`")
-        return f(self, *args, **kwargs)
+    if asyncio.iscoroutinefunction(f):
 
-    return g
+        async def g(self, *args, **kwargs):
+            if self._results is None:
+                raise exceptions.Error("Called before `execute`")
+            return await f(self, *args, **kwargs)
+
+    else:
+
+        def g(self, *args, **kwargs):
+            if self._results is None:
+                raise exceptions.Error("Called before `execute`")
+            return f(self, *args, **kwargs)
+
+    return functools.wraps(f)(g)
 
 
 def get_description_from_row(row):
@@ -115,9 +142,7 @@ def get_type(value):
     raise exceptions.Error("Value of unknown type: {value}".format(value=value))
 
 
-class Connection(object):
-    """Connection to a Druid database."""
-
+class BaseConnection(object):
     def __init__(
         self,
         host="localhost",
@@ -131,6 +156,7 @@ class Connection(object):
         ssl_verify_cert=True,
         ssl_client_cert=None,
         proxies=None,
+        timeout=None,
     ):
         netloc = "{host}:{port}".format(host=host, port=port)
         self.url = parse.urlunparse((scheme, netloc, path, None, None, None))
@@ -143,6 +169,7 @@ class Connection(object):
         self.ssl_verify_cert = ssl_verify_cert
         self.ssl_client_cert = ssl_client_cert
         self.proxies = proxies
+        self.timeout = timeout
 
     @check_closed
     def close(self):
@@ -165,8 +192,25 @@ class Connection(object):
 
     @check_closed
     def cursor(self):
-        """Return a new Cursor Object using the connection."""
+        """Return a new cursor Object using the connection."""
+        raise NotImplementedError("Subclasses must implement this method")
 
+    @check_closed
+    def execute(self, operation, parameters=None):
+        raise NotImplementedError("Subclasses must implement this method")
+
+    def __enter__(self):
+        return self.cursor()
+
+    def __exit__(self, *exc):
+        self.close()
+
+
+class Connection(BaseConnection):
+    """Connection to a Druid database."""
+
+    @check_closed
+    def cursor(self):
         cursor = Cursor(
             self.url,
             self.user,
@@ -176,6 +220,7 @@ class Connection(object):
             self.ssl_verify_cert,
             self.ssl_client_cert,
             self.proxies,
+            self.timeout,
         )
 
         self.cursors.append(cursor)
@@ -187,16 +232,8 @@ class Connection(object):
         cursor = self.cursor()
         return cursor.execute(operation, parameters)
 
-    def __enter__(self):
-        return self.cursor()
 
-    def __exit__(self, *exc):
-        self.close()
-
-
-class Cursor(object):
-    """Connection cursor."""
-
+class BaseCursor(object):
     def __init__(
         self,
         url,
@@ -207,6 +244,7 @@ class Cursor(object):
         ssl_verify_cert=True,
         proxies=None,
         ssl_client_cert=None,
+        timeout=None,
     ):
         if header is not None and not header:
             warnings.warn(
@@ -221,6 +259,7 @@ class Cursor(object):
         self.ssl_verify_cert = ssl_verify_cert
         self.ssl_client_cert = ssl_client_cert
         self.proxies = proxies
+        self.timeout = timeout
 
         # This read/write attribute specifies the number of rows to fetch at a
         # time with .fetchmany(). It defaults to 1 meaning to fetch a single
@@ -235,6 +274,112 @@ class Cursor(object):
         # this is set to an iterator after a successfull query
         self._results = None
 
+    @check_closed
+    def close(self):
+        """Close the cursor."""
+        self.closed = True
+
+    @property
+    @check_result
+    @check_closed
+    def rowcount(self):
+        # consume the iterator
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @check_closed
+    def execute(self, operation, parameters=None):
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @check_closed
+    def executemany(self, operation, seq_of_parameters=None):
+        raise exceptions.NotSupportedError(
+            "`executemany` is not supported, use `execute` instead"
+        )
+
+    @check_result
+    @check_closed
+    def fetchone(self):
+        """
+        Fetch the next row of a query result set, returning a single sequence,
+        or `None` when no more data is available.
+        """
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @check_result
+    @check_closed
+    def fetchmany(self, size=None):
+        """
+        Fetch the next set of rows of a query result, returning a sequence of
+        sequences (e.g. a list of tuples). An empty sequence is returned when
+        no more rows are available.
+        """
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @check_result
+    @check_closed
+    def fetchall(self):
+        """
+        Fetch all (remaining) rows of a query result, returning them as a
+        sequence of sequences (e.g. a list of tuples). Note that the cursor's
+        arraysize attribute can affect the performance of this operation.
+        """
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @check_closed
+    def setinputsizes(self, sizes):
+        # not supported
+        pass
+
+    @check_closed
+    def setoutputsizes(self, sizes):
+        # not supported
+        pass
+
+    def _stream_query(self, query):
+        """
+        Stream rows from a query.
+
+        This method will yield rows as the data is returned from the server.
+        """
+        raise NotImplementedError("Subclasses must implement this method")
+
+    def _prepare_headers_and_payload(self, query):
+        headers = {"Content-Type": "application/json"}
+
+        payload = {
+            "query": query,
+            "context": self.context,
+            "header": True,
+            "resultFormat": "arrayLines",
+        }
+
+        if self.user is not None:
+            authstring = "{}:{}".format(self.user, self.password)
+            b64string = b64encode(authstring.encode()).decode()
+            headers["Authorization"] = "Basic {}".format(b64string)
+
+        return headers, payload
+
+    @staticmethod
+    def _handle_http_error(response):
+        try:
+            payload = response.json()
+        except Exception:
+            payload = {
+                "error": "Unknown error",
+                "errorClass": "Unknown",
+                "errorMessage": response.text,
+            }
+        msg = "{error} ({errorClass}): {errorMessage}".format(**payload)
+        raise exceptions.ProgrammingError(msg)
+
+    def _set_description(self, field_names):
+        self.description = [(name, None) for name in field_names]
+
+
+class Cursor(BaseCursor):
+    """Connection cursor."""
+
     @property
     @check_result
     @check_closed
@@ -244,11 +389,6 @@ class Cursor(object):
         n = len(results)
         self._results = iter(results)
         return n
-
-    @check_closed
-    def close(self):
-        """Close the cursor."""
-        self.closed = True
 
     @check_closed
     def execute(self, operation, parameters=None):
@@ -264,19 +404,9 @@ class Cursor(object):
 
         return self
 
-    @check_closed
-    def executemany(self, operation, seq_of_parameters=None):
-        raise exceptions.NotSupportedError(
-            "`executemany` is not supported, use `execute` instead"
-        )
-
     @check_result
     @check_closed
     def fetchone(self):
-        """
-        Fetch the next row of a query result set, returning a single sequence,
-        or `None` when no more data is available.
-        """
         try:
             return self.next()
         except StopIteration:
@@ -285,88 +415,45 @@ class Cursor(object):
     @check_result
     @check_closed
     def fetchmany(self, size=None):
-        """
-        Fetch the next set of rows of a query result, returning a sequence of
-        sequences (e.g. a list of tuples). An empty sequence is returned when
-        no more rows are available.
-        """
         size = size or self.arraysize
         return list(itertools.islice(self._results, size))
 
     @check_result
     @check_closed
     def fetchall(self):
-        """
-        Fetch all (remaining) rows of a query result, returning them as a
-        sequence of sequences (e.g. a list of tuples). Note that the cursor's
-        arraysize attribute can affect the performance of this operation.
-        """
         return list(self._results)
 
-    @check_closed
-    def setinputsizes(self, sizes):
-        # not supported
-        pass
-
-    @check_closed
-    def setoutputsizes(self, sizes):
-        # not supported
-        pass
-
-    @check_closed
-    def __iter__(self):
-        return self
-
+    @check_result
     @check_closed
     def __next__(self):
         return next(self._results)
 
     next = __next__
 
-    def _stream_query(self, query):
-        """
-        Stream rows from a query.
+    @check_closed
+    def __iter__(self):
+        return self
 
-        This method will yield rows as the data is returned from the server.
-        """
+    def _stream_query(self, query):
         self.description = None
 
-        headers = {"Content-Type": "application/json"}
+        headers, payload = self._prepare_headers_and_payload(query)
 
-        payload = {
-            "query": query,
-            "context": self.context,
-            "header": True,
-            "resultFormat": "arrayLines",
-        }
-
-        auth = (
-            requests.auth.HTTPBasicAuth(self.user, self.password) if self.user else None
-        )
         r = requests.post(
             self.url,
             stream=True,
             headers=headers,
             json=payload,
-            auth=auth,
             verify=self.ssl_verify_cert,
             cert=self.ssl_client_cert,
             proxies=self.proxies,
+            timeout=self.timeout,
         )
         if r.encoding is None:
             r.encoding = "utf-8"
         # raise any error messages
         if r.status_code != 200:
-            try:
-                payload = r.json()
-            except Exception:
-                payload = {
-                    "error": "Unknown error",
-                    "errorClass": "Unknown",
-                    "errorMessage": r.text,
-                }
-            msg = "{error} ({errorClass}): {errorMessage}".format(**payload)
-            raise exceptions.ProgrammingError(msg)
+            self._handle_http_error(r)
 
         # Druid will stream the data in chunks of 8k bytes
         # setting `chunk_size` to `None` makes it use the server size
@@ -376,9 +463,7 @@ class Cursor(object):
         Row = namedtuple("Row", field_names, rename=True)
         make_row = Row._make
 
-        self.description = [(name, None) for name in field_names]
-
-        yield None
+        yield self._set_description(field_names)
 
         for row in lines:
             if not row:

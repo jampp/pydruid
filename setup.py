@@ -6,7 +6,7 @@ install_requires = ["requests", "ujson"]
 
 extras_require = {
     "pandas": ["pandas"],
-    "async": ["tornado"],
+    "async": ["tornado", "httpx"],
     "sqlalchemy": ["sqlalchemy"],
     "cli": ["pygments", "prompt_toolkit>=2.0.0", "tabulate"],
 }
@@ -16,7 +16,7 @@ with io.open("README.md", encoding="utf-8") as f:
 
 setup(
     name="pydruid",
-    version="0.8.0j",
+    version="0.9.0j",
     author="Druid Developers",
     author_email="druid-development@googlegroups.com",
     packages=find_packages(),

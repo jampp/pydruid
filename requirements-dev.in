@@ -1,5 +1,6 @@
+-r requirements.in
 pip-tools
-pre-commit
+pre-commit>2.9.2
 pycurl
 pytest
 tox
