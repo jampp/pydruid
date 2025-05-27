@@ -10,7 +10,7 @@ from unittest.mock import patch
 from requests.models import Response
 
 from pydruid.db.api import apply_parameters, Cursor
-
+from pydruid.db import exceptions
 
 class CursorTestSuite(unittest.TestCase):
     @patch("requests.post")
@@ -27,6 +27,31 @@ class CursorTestSuite(unittest.TestCase):
         result = cursor.fetchall()
         expected = [Row(name="alice"), Row(name="bob"), Row(name="charlie")]
         self.assertEqual(result, expected)
+
+    @patch("requests.post")
+    def test_execute_error(self, requests_post_mock):
+        response = Response()
+        response.status_code = 500
+        response.raw = BytesIO(b'{"error": "Internal Server Error", "errorClass": "some error class", "errorMessage": "some error message"}')
+        requests_post_mock.return_value = response
+
+        cursor = Cursor("http://example.com/")
+        with self.assertRaises(exceptions.ProgrammingError) as cm:
+            cursor.execute("SELECT * FROM table")
+        self.assertEqual(cm.exception.args[0], "Internal Server Error (some error class): some error message")
+
+    @patch("requests.post")
+    def test_execute_error_no_errorClass(self, requests_post_mock):
+        response = Response()
+        response.status_code = 500
+        response.raw = BytesIO(b'{"error": "druidException", "errorCode": "invalidInput", "persona": "USER", "category": "INVALID_INPUT", "errorMessage": "Aggregate expressions cannot be nested (line [1], column [215])", "context": {"sourceType": "sql", "line": "1", "column": "215", "endLine": "1", "endColumn": "1691"}}')
+        requests_post_mock.return_value = response
+
+        cursor = Cursor("http://example.com/")
+        with self.assertRaises(exceptions.ProgrammingError) as cm:
+            cursor.execute("SELECT * FROM table")
+        self.assertEqual(cm.exception.args[0], "druidException (invalidInput): Aggregate expressions cannot be nested (line [1], column [215])")
+
 
     @patch("requests.post")
     def test_execute_empty_result(self, requests_post_mock):

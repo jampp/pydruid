@@ -370,6 +370,8 @@ class BaseCursor(object):
                 "errorClass": "Unknown",
                 "errorMessage": response.text,
             }
+        if "errorClass" not in payload and "errorCode" in payload:
+            payload["errorClass"] = payload["errorCode"]
         msg = "{error} ({errorClass}): {errorMessage}".format(**payload)
         raise exceptions.ProgrammingError(msg)
 
