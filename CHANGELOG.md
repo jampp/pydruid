@@ -1,5 +1,8 @@
 ## Change Log
 
+### 0.9.1j (Unreleased)
+- [FS-1668](https://jampphq.atlassian.net/browse/FS-1668) Fix error handling ('KeyError: errorClass' raised)
+
 ### 0.9.0j (Unreleased)
 - [#7](https://github.com/jampp/pydruid/pull/7) Add support for async SQL API
 
